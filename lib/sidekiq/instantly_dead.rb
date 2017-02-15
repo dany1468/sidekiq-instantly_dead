@@ -1,4 +1,4 @@
-require "sidekiq/instantly_dead/version"
+require 'sidekiq/instantly_dead/version'
 
 module Sidekiq
   module InstantlyDead
