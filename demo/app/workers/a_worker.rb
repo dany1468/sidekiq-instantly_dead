@@ -1,0 +1,3 @@
+class AWorker
+  
+end
