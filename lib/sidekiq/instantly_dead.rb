@@ -1,4 +1,5 @@
 require 'sidekiq/instantly_dead/version'
+require 'sidekiq/instantly_dead_error'
 
 module Sidekiq
   module InstantlyDead
