@@ -1,3 +1,5 @@
+require 'sidekiq'
+
 require 'sidekiq/instantly_dead/version'
 require 'sidekiq/instantly_dead_error'
 
@@ -18,7 +20,7 @@ module Sidekiq
 
           msg['retry_count'] = max_retry_attempts
 
-          logger.debug { "Increase retry_count to max_retry_attempt(#{max_retry_attempt}) to instantly dead" }
+          Sidekiq.logger.debug { "Increase retry_count to max_retry_attempt(#{max_retry_attempt}) to instantly dead" }
         end
 
         raise
@@ -39,6 +41,6 @@ end
 
 Sidekiq.configure_server do |config|
   config.server_middleware do |chain|
-    chain.insert_before Sidekiq::Middleware::Server::RetryJobs, Sidekiq::PerformingContext::Middleware
+    chain.insert_after Sidekiq::Middleware::Server::RetryJobs, Sidekiq::InstantlyDead::Middleware
   end
 end
