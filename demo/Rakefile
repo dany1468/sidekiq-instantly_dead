@@ -2,5 +2,46 @@
 # for example lib/tasks/capistrano.rake, and they will automatically be available to Rake.
 
 require_relative 'config/application'
+require 'sidekiq/instantly_dead'
 
 Rails.application.load_tasks
+
+namespace :demo do
+  task dead: :environment do
+    puts '=> Creating sidekiq tasks'
+
+    RetryWorker.perform_async
+    DeadInstantlyWorker.perform_async
+
+    run_sidekiq_monitoring
+    run_sidekiq_workers
+  end
+
+  def run_sidekiq_monitoring
+    require 'sidekiq/web'
+    Thread.new do
+      Rack::Server.start app: Sidekiq::Web, Port: 3000
+    end
+    sleep 1
+    Launchy.open 'http://127.0.0.1:3000/busy?poll=true'
+  end
+
+  def run_sidekiq_workers
+    require 'sidekiq/cli'
+    cli = Sidekiq::CLI.instance
+
+    %w(validate! boot_system).each do |stub|
+      cli.define_singleton_method(stub) {}
+    end
+
+    cli.send :setup_options, []
+
+    Sidekiq.options[:lifecycle_events][:startup] = [-> {
+      Sidekiq.server_middleware do |chain|
+        chain.insert_after Sidekiq::Middleware::Server::RetryJobs, Sidekiq::InstantlyDead::Middleware
+      end
+    }]
+
+    cli.run
+  end
+end
