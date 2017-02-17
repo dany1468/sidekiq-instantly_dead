@@ -6,8 +6,8 @@ require 'sidekiq/instantly_dead_error'
 module Sidekiq
   module InstantlyDead
     class Middleware
-      def initialize(max_retries: Sidekiq::Middleware::Server::RetryJobs::DEFAULT_MAX_RETRY_ATTEMPTS)
-        @max_retries = max_retries
+      def initialize(options = {})
+        @max_retries = options.fetch(:max_retries, Sidekiq::Middleware::Server::RetryJobs::DEFAULT_MAX_RETRY_ATTEMPTS)
       end
 
       def call(_worker, msg, _queue)
@@ -36,11 +36,5 @@ module Sidekiq
         end
       end
     end
-  end
-end
-
-Sidekiq.configure_server do |config|
-  config.server_middleware do |chain|
-    chain.insert_after Sidekiq::Middleware::Server::RetryJobs, Sidekiq::InstantlyDead::Middleware
   end
 end
